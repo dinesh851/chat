@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Group Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+            display: flex;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h1 {
+            color: #4a5568;
+            margin-bottom: 0.75rem;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .auth-header p {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.85rem;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: #f8fafc;
+            color: #718096;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .auth-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.85rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(102, 126, 234, 0.2);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            background: #667eea;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #764ba2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .user-details h3 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        .user-status {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .online-users {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .online-users h3 {
+            font-size: 1rem;
+            color: #4a5568;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .online-users h3::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+        }
+
+        .users-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .user-item:hover {
+            background: #edf2f7;
+        }
+
+        .user-avatar-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+            flex-grow: 1;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .online {
+            background: #48bb78;
+        }
+
+        .offline {
+            background: #a0aec0;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+        }
+
+        .chat-header {
+            padding: 1.25rem 1.5rem;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            color: #2d3748;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .chat-info {
+            color: #718096;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 0.85rem 1.25rem;
+            border-radius: 12px;
+            position: relative;
+            word-wrap: break-word;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .message.own {
+            align-self: flex-end;
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-header {
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .message.other .message-header {
+            color: #4a5568;
+        }
+
+        .message.own .message-header {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .message-content {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            text-align: right;
+        }
+
+        .message.own .message-time {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .message.other .message-time {
+            color: #718096;
+        }
+
+        .file-message {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            margin: 0.5rem 0;
+        }
+
+        .file-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .file-details {
+            font-size: 0.75rem;
+            color: #718096;
+        }
+
+        .download-btn {
+            padding: 0.5rem 1rem;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .download-btn:hover {
+            background: #38a169;
+        }
+
+        .message-input-container {
+            padding: 1.25rem;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .file-upload-btn {
+            background: #a0aec0;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-upload-btn:hover {
+            background: #718096;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.85rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            resize: none;
+            max-height: 120px;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: white;
+        }
+
+        .send-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+        }
+
+        .send-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            color: #48bb78;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .connection-status::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .connection-status.connected {
+            background: rgba(72, 187, 120, 0.9);
+        }
+
+        .connection-status.connected::before {
+            background: white;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(229, 62, 62, 0.9);
+        }
+
+        .connection-status.disconnected::before {
+            background: white;
+        }
+
+        .connection-status.connecting {
+            background: rgba(246, 224, 94, 0.9);
+            color: #975a16;
+        }
+
+        .connection-status.connecting::before {
+            background: #975a16;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .sidebar {
+                position: absolute;
+                left: -280px;
+                width: 260px;
+                height: 100%;
+                transition: left 0.3s ease;
+                z-index: 100;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .chat-area {
+                width: 100%;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+                position: absolute;
+                top: 1.25rem;
+                left: 1rem;
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                color: #4a5568;
+                cursor: pointer;
+                z-index: 10;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="connectionStatus" class="connection-status hidden">
+        <span id="connectionText">Connected</span>
+    </div>
+
+    <div id="authContainer" class="auth-container">
+        <div class="auth-header">
+            <h1>💬 Group Chat</h1>
+            <p>Secure real-time communication</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+            <button class="auth-tab" onclick="switchTab('register')">Register</button>
+        </div>
+
+        <form id="loginForm" class="auth-form">
+            <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" required placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+            <div id="loginError" class="error-message hidden"></div>
+        </form>
+
+        <form id="registerForm" class="auth-form hidden">
+            <div class="form-group">
+                <label for="registerUsername">Username</label>
+                <input type="text" id="registerUsername" required placeholder="Choose a username">
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" required placeholder="Create a password">
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+            <div id="registerError" class="error-message hidden"></div>
+            <div id="registerSuccess" class="success-message hidden"></div>
+        </form>
+    </div>
+
+    <div id="chatContainer" class="container hidden">
+        <div id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar" id="currentUserAvatar">U</div>
+                    <div class="user-details">
+                        <h3 id="currentUsername">Username</h3>
+                        <div class="user-status">Online</div>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16,17 21,12 16,7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="online-users">
+                <h3>Online Users</h3>
+                <ul id="usersList" class="users-list"></ul>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()" style="display: none;">☰</button>
+            
+            <div class="chat-header">
+                <div>
+                    <h2>Group Chat</h2>
+                    <div class="chat-info" id="onlineCount">0 users online</div>
+                </div>
+            </div>
+
+            <div id="messagesContainer" class="messages-container"></div>
+
+            <div class="message-input-container">
+                <input type="file" id="fileInput" style="display: none;">
+                <button class="file-upload-btn" onclick="document.getElementById('fileInput').click()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </button>
+                <textarea id="messageInput" class="message-input" placeholder="Type your message..." rows="1"></textarea>
+                <button id="sendBtn" class="send-btn" onclick="sendMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                    </svg>
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let authToken = null;
+        let websocket = null;
+        let users = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            authToken = localStorage.getItem('authToken');
+            if (authToken) {
+                validateTokenAndLogin();
+            }
+
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            
+            const messageInput = document.getElementById('messageInput');
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+            if (window.innerWidth <= 768) {
+                document.querySelector('.mobile-menu-btn').style.display = 'block';
+            }
+        });
+
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.auth-tab');
+            const forms = document.querySelectorAll('.auth-form');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.add('hidden'));
+            
+            if (tab === 'login') {
+                tabs[0].classList.add('active');
+                document.getElementById('loginForm').classList.remove('hidden');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('registerForm').classList.remove('hidden');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.access_token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    showChat();
+                } else {
+                    showError('loginError', data.detail || 'Login failed');
+                }
+            } catch (error) {
+                showError('loginError', 'Network error. Please try again.');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showSuccess('registerSuccess', 'Registration successful! You can now login.');
+                    document.getElementById('registerForm').reset();
+                    setTimeout(() => {
+                        switchTab('login');
+                        document.getElementById('loginUsername').value = username;
+                    }, 2000);
+                } else {
+                    showError('registerError', data.detail || 'Registration failed');
+                }
+            } catch (error) {
+                showError('registerError', 'Network error. Please try again.');
+            }
+        }
+
+        async function validateTokenAndLogin() {
+            try {
+                const response = await fetch('/api/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showChat();
+                } else {
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                }
+            } catch (error) {
+                localStorage.removeItem('authToken');
+                authToken = null;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            authToken = null;
+            currentUser = null;
+            
+            if (websocket) {
+                websocket.close();
+                websocket = null;
+            }
+            
+            document.getElementById('authContainer').classList.remove('hidden');
+            document.getElementById('chatContainer').classList.add('hidden');
+            updateConnectionStatus('disconnected');
+        }
+
+        async function showChat() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('chatContainer').classList.remove('hidden');
+            
+            document.getElementById('currentUsername').textContent = currentUser.username;
+            document.getElementById('currentUserAvatar').textContent = currentUser.username[0].toUpperCase();
+            
+            await loadUsers();
+            await loadMessages();
+            
+            connectWebSocket();
+        }
+
+        function connectWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws/${currentUser.username}`;
+            
+            updateConnectionStatus('connecting');
+            
+            websocket = new WebSocket(wsUrl);
+            
+            websocket.onopen = function() {
+                updateConnectionStatus('connected');
+                console.log('WebSocket connected');
+            };
+            
+            websocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'message') {
+                    addMessage(data);
+                } else if (data.type === 'user_status') {
+                    updateUserStatus(data.username, data.online);
+                    updateOnlineCount();
+                } else if (data.type === 'user_list') {
+                    users = data.users;
+                    updateUsersList();
+                    updateOnlineCount();
+                }
+            };
+            
+            websocket.onclose = function() {
+                updateConnectionStatus('disconnected');
+                console.log('WebSocket disconnected');
+                
+                setTimeout(() => {
+                    if (currentUser && !websocket) {
+                        connectWebSocket();
+                    }
+                }, 3000);
+            };
+            
+            websocket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus('disconnected');
+            };
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    users = await response.json();
+                    users.forEach(user => {
+                        if (user.online_status === undefined) {
+                            user.online_status = false;
+                        }
+                    });
+                    updateUsersList();
+                    updateOnlineCount();
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/messages', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const messages = await response.json();
+                    displayMessages(messages);
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        function updateUsersList() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '';
+            
+            const sortedUsers = [...users].sort((a, b) => 
+                (b.online_status || false) - (a.online_status || false)
+            );
+            
+            sortedUsers.forEach(user => {
+                if (user.username === currentUser.username) return;
+                
+                const li = document.createElement('li');
+                li.className = 'user-item';
+                
+                const statusClass = user.online_status ? 'online' : 'offline';
+                
+                li.innerHTML = `
+                    <div class="user-avatar-sm" style="background: ${stringToColor(user.username)}">
+                        ${user.username[0].toUpperCase()}
+                    </div>
+                    <div class="user-name">${user.username}</div>
+                    <div class="status-indicator ${statusClass}"></div>
+                `;
+                
+                usersList.appendChild(li);
+            });
+        }
+
+        function updateOnlineCount() {
+            const onlineCount = users.filter(u => u.online_status).length;
+            document.getElementById('onlineCount').textContent = 
+                `${onlineCount} user${onlineCount !== 1 ? 's' : ''} online`;
+        }
+
+        function updateUserStatus(username, online) {
+            const user = users.find(u => u.username === username);
+            if (user) {
+                user.online_status = online;
+                updateUsersList();
+            }
+        }
+
+        function displayMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+            
+            messages.forEach(message => {
+                addMessage(message, false);
+            });
+            
+            scrollToBottom();
+        }
+
+        function addMessage(messageData, append = true) {
+            const container = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            
+            const isOwn = messageData.sender_username === currentUser.username;
+            
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            
+            let messageContent = '';
+            
+            if (!isOwn) {
+                messageContent += `<div class="message-header">${messageData.sender_username}</div>`;
+            }
+            
+            if (messageData.message_type === 'file' && messageData.file_info) {
+                messageContent += `
+                    <div class="file-message">
+                        <div class="file-icon">${getFileIcon(messageData.file_info.file_type)}</div>
+                        <div class="file-info">
+                            <div class="file-name">${messageData.file_info.original_filename}</div>
+                            <div class="file-details">
+                                ${formatFileSize(messageData.file_info.file_size)} • 
+                                ${messageData.file_info.file_type}
+                            </div>
+                        </div>
+                        <button class="download-btn" onclick="downloadFile('${messageData.file_info.id}', '${messageData.file_info.original_filename}')">
+                            Download
+                        </button>
+                    </div>
+                `;
+            } else {
+                messageContent += `<div class="message-content">${escapeHtml(messageData.content)}</div>`;
+            }
+            
+            messageContent += `<div class="message-time">${formatTime(messageData.timestamp)}</div>`;
+            
+            messageDiv.innerHTML = messageContent;
+            
+            if (append) {
+                container.appendChild(messageDiv);
+                scrollToBottom();
+            } else {
+                container.appendChild(messageDiv);
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content || !websocket) return;
+            
+            const message = {
+                content: content,
+                message_type: 'text'
+            };
+            
+            websocket.send(JSON.stringify(message));
+            input.value = '';
+            input.style.height = 'auto';
+        }
+
+        function updateConnectionStatus(status) {
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('connectionText');
+            
+            statusEl.className = `connection-status ${status}`;
+            
+            switch (status) {
+                case 'connected':
+                    textEl.textContent = 'Connected';
+                    statusEl.classList.remove('hidden');
+                    setTimeout(() => statusEl.classList.add('hidden'), 3000);
+                    break;
+                case 'connecting':
+                    textEl.textContent = 'Connecting...';
+                    statusEl.classList.remove('hidden');
+                    break;
+                case 'disconnected':
+                    textEl.textContent = 'Disconnected';
+                    statusEl.classList.remove('hidden');
+                    break;
+            }
+        }
+
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+            
+            for (const file of files) {
+                await uploadFile(file);
+            }
+            
+            event.target.value = '';
+        }
+
+        async function uploadFile(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    const message = {
+                        type: 'file_message',
+                        file_id: data.file_info.id
+                    };
+                    
+                    websocket.send(JSON.stringify(message));
+                } else {
+                    const error = await response.json();
+                    alert(`Upload failed: ${error.detail}`);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed. Please try again.');
+            }
+        }
+
+        async function downloadFile(fileId, filename) {
+            try {
+                const response = await fetch(`/api/download/${fileId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Download failed');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Download failed. Please try again.');
+            }
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.remove('hidden');
+            setTimeout(() => element.classList.add('hidden'), 5000);
+        }
+
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.remove('hidden');
+            setTimeout(() => element.classList.add('hidden'), 5000);
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]);
+        }
+
+        function getFileIcon(fileType) {
+            const icons = {
+                'image': '🖼️',
+                'video': '🎬',
+                'audio': '🎵',
+                'document': '📄',
+                'pdf': '📕',
+                'spreadsheet': '📊',
+                'presentation': '📈',
+                'archive': '📦',
+                'text': '📝'
+            };
+            return icons[fileType] || '📄';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 70%, 65%)`;
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                const menuBtn = document.querySelector('.mobile-menu-btn');
+                
+                if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            const menuBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (window.innerWidth <= 768) {
+                menuBtn.style.display = 'block';
+            } else {
+                menuBtn.style.display = 'none';
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        });
+
+        ['loginUsername', 'loginPassword'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                document.getElementById('loginError').classList.add('hidden');
+            });
+        });
+
+        ['registerUsername', 'registerPassword'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                document.getElementById('registerError').classList.add('hidden');
+                document.getElementById('registerSuccess').classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
